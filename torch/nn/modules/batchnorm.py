@@ -708,6 +708,7 @@ class SyncBatchNorm(_BatchNorm):
         affine: bool = True,
         track_running_stats: bool = True,
         process_group: Optional[Any] = None,
+        rand = False,
         device=None,
         dtype=None,
     ) -> None:
@@ -716,6 +717,7 @@ class SyncBatchNorm(_BatchNorm):
             num_features, eps, momentum, affine, track_running_stats, **factory_kwargs
         )
         self.process_group = process_group
+        self.rand = rand
 
     def _check_input_dim(self, input):
         if input.dim() < 2:
@@ -737,7 +739,10 @@ class SyncBatchNorm(_BatchNorm):
         if self.momentum is None:
             exponential_average_factor = 0.0
         else:
-            exponential_average_factor = self.momentum
+            if not self.rand:
+                exponential_average_factor = self.momentum
+            else:
+                exponential_average_factor = self.momentum * abs(torch.normal(0,0.3))
 
         if self.training and self.track_running_stats:
             assert self.num_batches_tracked is not None
